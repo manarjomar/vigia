@@ -1,0 +1,72 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Preparar la firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$SIGNING_PASSWORD" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/vigia.jks"
+            echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/vigia.jks" >> "$GITHUB_ENV"
+            echo "SIGNED=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Faltan los secretos de firma: no se publicará ninguna versión."
+            echo "SIGNED=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Elegir la versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(tr -d '[:space:]' < version.txt)"
+          echo "VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "PUBLISH=false" >> "$GITHUB_ENV"
+          else
+            echo "PUBLISH=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Probar y compilar
+        env:
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: gradle testDebugUnitTest assembleRelease --stacktrace
+
+      - name: Renombrar el APK
+        run: cp app/build/outputs/apk/release/app-release.apk "Vigia-${VERSION_NAME}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vigia-APK
+          path: Vigia-*.apk
+
+      - name: Publicar la versión
+        if: env.PUBLISH == 'true' && env.SIGNED == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION_NAME }}
+          name: Vigía ${{ env.VERSION_NAME }}
+          files: Vigia-*.apk

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dream_label">Reloj de Vigía</string>
+    <string name="widget_label">Reloj y próxima alarma</string>
+    <string name="widget_empty">Sin alarmas</string>
+    <string name="status_widget_label">¿Sonará mi alarma?</string>
+    <string name="status_small_label">¿Sonará?</string>
+    <string name="status_week_label">Mi semana de alarmas</string>
+    <string name="status_small_desc">Próxima alarma y si va a sonar</string>
+    <string name="status_medium_desc">Estado, motivo y botón para saltar o hacer sonar</string>
+    <string name="status_week_desc">Tus alarmas y turnos de los próximos 7 días</string>
+    <string name="clock_desc">La hora y tu próxima alarma de Vigía</string>
+    <string name="status_mini_label">Próxima alarma</string>
+    <string name="status_mini_desc">Solo tu próxima alarma y su estado</string>
+</resources>

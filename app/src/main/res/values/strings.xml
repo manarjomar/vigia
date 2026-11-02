@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vigía</string>
+    <string name="dream_label">Vigía clock</string>
+    <string name="widget_label">Clock and next alarm</string>
+    <string name="widget_empty">No alarms</string>
+    <string name="status_widget_label">Will my alarm ring?</string>
+    <string name="status_small_label">Will it ring?</string>
+    <string name="status_week_label">My alarm week</string>
+    <string name="status_small_desc">Next alarm and whether it will ring</string>
+    <string name="status_medium_desc">Status, reason and a button to skip or ring</string>
+    <string name="status_week_desc">Your alarms and shifts for the next 7 days</string>
+    <string name="clock_desc">The time and your next Vigía alarm</string>
+    <string name="status_mini_label">Next alarm</string>
+    <string name="status_mini_desc">Just your next alarm and its status</string>
+</resources>
