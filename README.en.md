@@ -144,7 +144,7 @@ International holidays come from [Nager.Date](https://date.nager.at).
 
 ## Building
 
-Every push to `main` runs the tests and builds a test APK. To publish a version under **Releases**, change the number in `version.txt`. Signing uses the `KEYSTORE_BASE64` and `SIGNING_PASSWORD` secrets. Don't change that key: Android would reject updates.
+Every push to `main` runs the tests and builds a test APK. To publish a version under **Releases**, change the number in `version.txt` and its notes in `release-notes.md`. Signing uses the `KEYSTORE_BASE64` and `SIGNING_PASSWORD` secrets. Don't change that key: Android would reject updates.
 
 ## Getting started
 

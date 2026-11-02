@@ -142,7 +142,7 @@ Los festivos internacionales proceden de [Nager.Date](https://date.nager.at).
 
 ## Compilación
 
-Cada envío a `main` ejecuta las pruebas y genera un APK de prueba. Para publicar una versión en **Releases**, cambia el número de `version.txt`. La firma usa los secretos `KEYSTORE_BASE64` y `SIGNING_PASSWORD`. No cambies esa clave: Android rechazaría las actualizaciones.
+Cada envío a `main` ejecuta las pruebas y genera un APK de prueba. Para publicar una versión en **Releases**, cambia el número de `version.txt` y sus notas en `release-notes.md`. La firma usa los secretos `KEYSTORE_BASE64` y `SIGNING_PASSWORD`. No cambies esa clave: Android rechazaría las actualizaciones.
 
 ## Puesta en marcha
 

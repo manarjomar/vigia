@@ -69,4 +69,5 @@ jobs:
         with:
           tag_name: v${{ env.VERSION_NAME }}
           name: Vigía ${{ env.VERSION_NAME }}
+          body_path: release-notes.md
           files: Vigia-*.apk
