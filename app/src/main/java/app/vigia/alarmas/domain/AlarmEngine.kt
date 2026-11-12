@@ -62,7 +62,9 @@ object AlarmEngine {
         val burst = (time as? Timed.Ready)?.burst ?: spec.config.burst.takeIf { spec.config.shifts == null }
 
         if (spec.stoppedDate == date) return Decision.Skip(tr("Detenida por hoy", "Stopped for today"))
-        if (spec.skipDate == date) return Decision.Skip(tr("Saltada manualmente", "Skipped manually"))
+        if (spec.skipDate == date && spec.forceDate != date) {
+            return Decision.Skip(tr("Saltada manualmente", "Skipped manually"))
+        }
         spec.oneTime?.takeIf { it.toLocalDate() == date }?.let { moment ->
             val usual = resolved(spec.config, time)
             return Decision.Ring(moment.toLocalTime(), ONE_TIME_NOTE, shiftBurst(burst, usual, moment.toLocalTime()))
