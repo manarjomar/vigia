@@ -1,5 +1,9 @@
 package app.vigia.alarmas.ui
 
+import java.time.LocalDateTime
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.AlertDialog
+import android.app.TimePickerDialog
 import app.vigia.alarmas.domain.tr
 import app.vigia.alarmas.domain.APP_LOCALE
 import androidx.compose.animation.AnimatedVisibility
@@ -308,6 +312,8 @@ private fun AlarmCard(alarm: AlarmEntity, onClick: () -> Unit, modifier: Modifie
         value = coordinator.plan(alarm)
     }
     val contentAlpha by animateFloatAsState(if (alarm.enabled) 1f else 0.5f, label = "enabled")
+    var changing by remember { mutableStateOf(false) }
+    if (changing) OneTimeFlow(alarm) { changing = false }
 
     Surface(
         onClick = onClick,
@@ -367,17 +373,123 @@ private fun AlarmCard(alarm: AlarmEntity, onClick: () -> Unit, modifier: Modifie
                     current?.note?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                     }
-                    if (fireAt != null || alarm.hasActiveSkip) {
-                        TextButton(
-                            onClick = { scope.launch { coordinator.toggleSkipNext(alarm) } },
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Text(if (alarm.hasActiveSkip) tr("Recuperar la saltada", "Restore skipped alarm") else tr("Saltar la próxima", "Skip next"))
+                    val oneTime = alarm.oneTimeMoment?.takeIf { alarm.hasActiveOneTime }
+                    if (oneTime != null) {
+                        Text(
+                            tr(
+                                "Solo esta vez: ${oneTime.format(DATE_TIME)}",
+                                "Just this once: ${oneTime.format(DATE_TIME)}",
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        if (oneTime != null) {
+                            TextButton(
+                                onClick = { scope.launch { coordinator.clearOneTime(alarm) } },
+                                contentPadding = PaddingValues(0.dp),
+                            ) { Text(tr("Deshacer el cambio", "Undo change")) }
+                        } else {
+                            TextButton(
+                                onClick = { changing = true },
+                                contentPadding = PaddingValues(0.dp),
+                            ) { Text(tr("Cambiar solo la próxima", "Change next only")) }
+                        }
+                        if (fireAt != null || alarm.hasActiveSkip) {
+                            TextButton(
+                                onClick = { scope.launch { coordinator.toggleSkipNext(alarm) } },
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Text(if (alarm.hasActiveSkip) tr("Recuperar la saltada", "Restore skipped alarm") else tr("Saltar la próxima", "Skip next"))
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+private val DAY_TEXT: DateTimeFormatter get() = DateTimeFormatter.ofPattern(tr("EEEE d 'de' MMMM", "EEEE, MMMM d"), APP_LOCALE)
+
+/** Elegir la hora de la próxima vez y, si una regla dice que no suena, pedir confirmación. */
+@Composable
+private fun OneTimeFlow(alarm: AlarmEntity, onDone: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val coordinator = remember { Graph.coordinator(context) }
+    var conflict by remember { mutableStateOf<Pair<LocalDateTime, String>?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(alarm.id) {
+        val target = coordinator.oneTimeTarget(alarm)
+        if (target == null) {
+            message = tr("Esta alarma no tiene una próxima vez que cambiar.", "This alarm has no next time to change.")
+            return@LaunchedEffect
+        }
+        val start = target.current ?: target.usual
+        val dayText = target.date.format(DAY_TEXT)
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+                val moment = target.date.atTime(hour, minute)
+                scope.launch {
+                    if (!moment.isAfter(LocalDateTime.now())) {
+                        message = tr("Esa hora ya ha pasado.", "That time has already passed.")
+                        return@launch
+                    }
+                    val reason = coordinator.oneTimeConflict(alarm, target.date)
+                    if (reason == null) {
+                        coordinator.setOneTime(alarm, moment)
+                        onDone()
+                    } else {
+                        conflict = moment to reason
+                    }
+                }
+            },
+            start.hour,
+            start.minute,
+            true,
+        ).apply {
+            setTitle(tr("Solo el $dayText", "Only on $dayText"))
+            setOnCancelListener { if (conflict == null && message == null) onDone() }
+        }.show()
+    }
+
+    conflict?.let { (moment, reason) ->
+        AlertDialog(
+            onDismissRequest = onDone,
+            title = { Text(tr("Ese día no iba a sonar", "It wasn't going to ring that day")) },
+            text = {
+                Text(
+                    tr(
+                        "Motivo: $reason. ¿Quieres que suene el ${moment.format(DAY_TEXT)} a las ${hhmm(moment.hour, moment.minute)} igualmente?",
+                        "Reason: $reason. Do you want it to ring on ${moment.format(DAY_TEXT)} at ${hhmm(moment.hour, moment.minute)} anyway?",
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            coordinator.setOneTime(alarm, moment)
+                            onDone()
+                        }
+                    },
+                ) { Text(tr("Sonar igualmente", "Ring anyway")) }
+            },
+            dismissButton = { TextButton(onClick = onDone) { Text(tr("Cancelar", "Cancel")) } },
+        )
+    }
+
+    message?.let {
+        AlertDialog(
+            onDismissRequest = onDone,
+            text = { Text(it) },
+            confirmButton = { TextButton(onClick = onDone) { Text(tr("Aceptar", "OK")) } },
+        )
     }
 }
 

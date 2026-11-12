@@ -2,6 +2,7 @@ package app.vigia.alarmas.domain
 
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -219,6 +220,7 @@ data class AlarmSpec(
     val skipDate: LocalDate? = null,
     val forceDate: LocalDate? = null,
     val stoppedDate: LocalDate? = null,
+    val oneTime: LocalDateTime? = null,
 )
 
 data class CalendarEvent(

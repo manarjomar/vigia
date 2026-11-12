@@ -72,7 +72,7 @@ So when the school year ends, you turn off “School” in one go and bring it b
 
 You don't have to trust it blindly. The forecast shows the next 30 days and, when you tap one, explains whether it will ring and why.
 
-The night before, Vigía tells you if an alarm won't ring and offers a button to make it ring anyway. And if you don't need it on a particular day, you can skip just the next one.
+The night before, Vigía tells you if an alarm won't ring and offers a button to make it ring anyway. And if you don't need it on a particular day, you can skip just the next one, or change its time just that once. If a rule says it wouldn't ring that day, Vigía warns you and asks you to confirm.
 
 You don't even need to open the app. The widget tells you whether it will ring and why, with a clear colour for each status and in four sizes, from a tiny 2x1 up to one showing your whole week. Its background can be solid, semi-transparent or clear. From there, or from quick settings, you can skip the alarm or make it ring.
 
@@ -95,7 +95,7 @@ If the calendar can't be read or the holidays are missing, the alarm rings and l
 
 - **Rules:** calendars by account, keywords, all-day or busy events, holidays, dates, months, alternate weeks, even or odd days, and phone status.
 - **Shifts:** a paintable rota, cycles of up to 12 weeks, one time per shift, one-off changes, painted months and shifts from your calendar.
-- **Alarms:** groups, templates, one-off alarms, repeating within a range, 30-day forecast and skip next.
+- **Alarms:** groups, templates, one-off alarms, repeating within a range, 30-day forecast, and skipping or retiming just the next one.
 - **Wake-up:** tone or your own file, maximum volume, gradual rise, vibration and configurable snooze.
 - **Dismissal:** sums, shake, walk, QR code and backup alarm.
 - **Clock:** other cities, night mode and screensaver.

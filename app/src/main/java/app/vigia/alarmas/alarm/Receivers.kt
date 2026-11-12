@@ -54,6 +54,7 @@ class NoticeReceiver : BroadcastReceiver() {
             val coordinator = Graph.coordinator(context)
             val report = coordinator.eveningReport()
             report.skipped.forEach { Notifications.skippedTomorrow(context, it) }
+            report.changed.forEach { Notifications.changedTomorrow(context, it) }
             if (report.calendarUnavailable) Notifications.calendarUnavailable(context)
             coordinator.reconcile()
         }

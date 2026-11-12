@@ -42,6 +42,7 @@ object AlarmEngine {
     const val HORIZON_DAYS = 370L
     val CALENDAR_WARNING: String get() = tr("No se pudo leer el calendario: la alarma sonará", "Couldn't read the calendar: the alarm will ring")
     val CONTEXT_NOTE: String get() = tr("Se decide al llegar la hora", "Decided when the time comes")
+    val ONE_TIME_NOTE: String get() = tr("Solo esta vez", "Just this once")
     val HOLIDAY_NOTE: String get() = tr("Sin datos de festivos: la alarma sonará", "No holiday data: the alarm will ring")
 
     /**
@@ -61,8 +62,12 @@ object AlarmEngine {
         val burst = (time as? Timed.Ready)?.burst ?: spec.config.burst.takeIf { spec.config.shifts == null }
 
         if (spec.stoppedDate == date) return Decision.Skip(tr("Detenida por hoy", "Stopped for today"))
-        if (spec.forceDate == date) return Decision.Ring(resolved(spec.config, time), baseNote, burst)
         if (spec.skipDate == date) return Decision.Skip(tr("Saltada manualmente", "Skipped manually"))
+        spec.oneTime?.takeIf { it.toLocalDate() == date }?.let { moment ->
+            val usual = resolved(spec.config, time)
+            return Decision.Ring(moment.toLocalTime(), ONE_TIME_NOTE, shiftBurst(burst, usual, moment.toLocalTime()))
+        }
+        if (spec.forceDate == date) return Decision.Ring(resolved(spec.config, time), baseNote, burst)
         if (time is Timed.NoEvent) return Decision.Skip(tr("No hay ningún evento ese día", "No events that day"))
         if (time is Timed.Rest) return Decision.Skip(time.reason)
 
@@ -130,6 +135,35 @@ object AlarmEngine {
         } else {
             ForecastDay(date, evaluate(spec, date, calendar, zone = zone, holidays = holidays))
         }
+    }
+
+    /**
+     * Día y hora habitual de la próxima vez que toca la alarma, sin aplicar reglas.
+     * Es el día que cambia "Cambiar solo la próxima".
+     */
+    fun nextScheduledDay(
+        spec: AlarmSpec,
+        now: ZonedDateTime,
+        calendar: CalendarSnapshot,
+    ): Pair<LocalDate, LocalTime>? {
+        for (offset in 0..HORIZON_DAYS) {
+            val date = now.toLocalDate().plusDays(offset)
+            if (!spec.config.runsOn(date)) continue
+            val usual = resolved(spec.config, timeFor(spec.config, date, calendar, now.zone))
+            if (offset == 0L && !usual.isAfter(now.toLocalTime())) continue
+            return date to usual
+        }
+        return null
+    }
+
+    /** Mantiene la duración del rango de repetición al mover la hora de inicio. */
+    fun shiftBurst(burst: BurstConfig?, from: LocalTime, to: LocalTime): BurstConfig? {
+        if (burst == null) return null
+        val start = from.hour * 60 + from.minute
+        val length = burst.endHour * 60 + burst.endMinute - start
+        if (length <= 0) return burst
+        val end = (to.hour * 60 + to.minute + length).coerceAtMost(23 * 60 + 59)
+        return burst.copy(endHour = end / 60, endMinute = end % 60)
     }
 
     /** Horas a las que suena ese día: una, o todas las del rango. */

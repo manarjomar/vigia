@@ -17,6 +17,7 @@ import app.vigia.alarmas.domain.AlarmSpec
 import app.vigia.alarmas.domain.AppJson
 import app.vigia.alarmas.domain.TimerStep
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.builtins.ListSerializer
 
@@ -31,11 +32,24 @@ data class AlarmEntity(
     val snoozeCount: Int = 0,
     val backupPending: Boolean = false,
     val stoppedDate: String? = null,
+    val oneTime: String? = null,
 ) {
     val config: AlarmConfig
         get() = runCatching {
             AppJson.decodeFromString(AlarmConfig.serializer(), configJson)
         }.getOrDefault(AlarmConfig(label = tr("Alarma", "Alarm")))
+
+    val oneTimeMoment: LocalDateTime?
+        get() = oneTime?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() }
+
+    /** Cambio puntual pendiente. Con repetición en rango se mantiene todo ese día. */
+    val hasActiveOneTime: Boolean
+        get() {
+            val moment = oneTimeMoment ?: return false
+            val today = LocalDate.now()
+            return moment.toLocalDate().isAfter(today) ||
+                (moment.toLocalDate() == today && (moment.isAfter(LocalDateTime.now()) || config.burst != null))
+        }
 
     val hasActiveSkip: Boolean
         get() = parseDate(skipDate)?.let { !it.isBefore(LocalDate.now()) } ?: false
@@ -47,6 +61,7 @@ data class AlarmEntity(
         skipDate = parseDate(skipDate),
         forceDate = parseDate(forceDate),
         stoppedDate = parseDate(stoppedDate),
+        oneTime = oneTimeMoment,
     )
 
     fun withConfig(value: AlarmConfig) = copy(configJson = encodeConfig(value))
@@ -102,6 +117,7 @@ object HistoryType {
     const val BACKUP = "Respaldo"
     const val FORCED = "Sonará igualmente"
     const val STOPPED = "Detenida por hoy"
+    const val ONE_TIME = "Cambio puntual"
     const val WARNING = "Aviso"
 }
 
@@ -174,9 +190,15 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN oneTime TEXT")
+    }
+}
+
 @Database(
     entities = [AlarmEntity::class, TimerEntity::class, HistoryEntry::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class VigiaDatabase : RoomDatabase() {

@@ -162,6 +162,7 @@ private fun historyLabel(type: String): String = when (type) {
     HistoryType.BACKUP -> tr("Respaldo", "Backup")
     HistoryType.FORCED -> tr("Sonará igualmente", "Will ring anyway")
     HistoryType.STOPPED -> tr("Detenida por hoy", "Stopped for today")
+    HistoryType.ONE_TIME -> tr("Cambio puntual", "One-off change")
     HistoryType.WARNING -> tr("Aviso", "Warning")
     else -> type
 }

@@ -9,6 +9,7 @@ import app.vigia.alarmas.clock.TimerController
 import app.vigia.alarmas.data.CalendarRepository
 import app.vigia.alarmas.data.HolidayRepository
 import app.vigia.alarmas.data.MIGRATION_2_3
+import app.vigia.alarmas.data.MIGRATION_3_4
 import app.vigia.alarmas.data.Settings
 import app.vigia.alarmas.data.VigiaDatabase
 
@@ -25,7 +26,7 @@ object Graph {
                 context.applicationContext,
                 VigiaDatabase::class.java,
                 "vigia.db",
-            ).addMigrations(MIGRATION_2_3).fallbackToDestructiveMigrationFrom(1).build().also { database = it }
+            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).fallbackToDestructiveMigrationFrom(1).build().also { database = it }
         }
 
     fun holidays(context: Context): HolidayRepository =

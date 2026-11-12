@@ -321,4 +321,64 @@ class PlanningTest {
         val dawn = AlarmEngine.plan(spec, monday.atTime(5, 0).atZone(zone), empty)
         assertEquals(1, dawn.skipped.size)
     }
+
+    @Test
+    fun oneTimeChangesOnlyThatDay() {
+        val tuesday = monday.plusDays(1)
+        val spec = weekdaySpec.copy(oneTime = tuesday.atTime(7, 30))
+        val now = monday.atTime(21, 0).atZone(zone)
+        assertEquals(tuesday.atTime(7, 30).atZone(zone), AlarmEngine.plan(spec, now, empty).fireAt)
+        val after = tuesday.atTime(8, 0).atZone(zone)
+        assertEquals(tuesday.plusDays(1).atTime(7, 0).atZone(zone), AlarmEngine.plan(spec, after, empty).fireAt)
+        assertEquals(
+            Decision.Ring(LocalTime.of(7, 30), AlarmEngine.ONE_TIME_NOTE),
+            AlarmEngine.evaluate(spec, tuesday, empty),
+        )
+    }
+
+    @Test
+    fun oneTimeBeatsRulesButNotManualSkip() {
+        val tuesday = monday.plusDays(1)
+        val holiday = AlarmRule("f", conditions = listOf(DatesCondition(listOf(DateRange(tuesday, tuesday)))))
+        val spec = weekdaySpec.copy(
+            config = weekdaySpec.config.copy(rules = listOf(holiday)),
+            oneTime = tuesday.atTime(9, 0),
+        )
+        assertTrue(AlarmEngine.evaluate(spec, tuesday, empty) is Decision.Ring)
+        assertTrue(AlarmEngine.evaluate(spec.copy(skipDate = tuesday), tuesday, empty) is Decision.Skip)
+    }
+
+    @Test
+    fun oneTimeKeepsBurstLength() {
+        val tuesday = monday.plusDays(1)
+        val config = weekdaySpec.config.copy(burst = BurstConfig(7, 30, 10))
+        val spec = weekdaySpec.copy(config = config, oneTime = tuesday.atTime(8, 0))
+        val ring = AlarmEngine.evaluate(spec, tuesday, empty) as Decision.Ring
+        assertEquals(BurstConfig(8, 30, 10), ring.burst)
+    }
+
+    @Test
+    fun nextScheduledDayIgnoresRules() {
+        val holiday = AlarmRule("f", conditions = listOf(DatesCondition(listOf(DateRange(monday.plusDays(1), monday.plusDays(1))))))
+        val spec = weekdaySpec.copy(config = weekdaySpec.config.copy(rules = listOf(holiday)))
+        assertEquals(
+            monday.plusDays(1) to LocalTime.of(7, 0),
+            AlarmEngine.nextScheduledDay(spec, monday.atTime(21, 0).atZone(zone), empty),
+        )
+        val friday = monday.plusDays(4)
+        assertEquals(
+            monday.plusDays(7) to LocalTime.of(7, 0),
+            AlarmEngine.nextScheduledDay(spec, friday.atTime(8, 0).atZone(zone), empty),
+        )
+        assertEquals(
+            monday to LocalTime.of(7, 0),
+            AlarmEngine.nextScheduledDay(spec, monday.atTime(6, 0).atZone(zone), empty),
+        )
+    }
+
+    @Test
+    fun shiftDayUsesShiftTimeForNextChange() {
+        val now = monday.minusDays(1).atTime(20, 0).atZone(zone)
+        assertEquals(monday to LocalTime.of(6, 0), AlarmEngine.nextScheduledDay(shiftSpec(threeWeeks), now, empty))
+    }
 }

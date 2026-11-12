@@ -72,7 +72,7 @@ Así, cuando acaba el curso, apagas “Colegio” de una vez y lo recuperas en s
 
 No tienes que fiarte a ciegas. La previsión muestra los próximos 30 días y, al tocar uno, te explica si sonará y por qué.
 
-La noche anterior, Vigía te avisa si una alarma no va a sonar y te ofrece un botón para que suene igualmente. Y si un día concreto no la necesitas, puedes saltar solo la próxima.
+La noche anterior, Vigía te avisa si una alarma no va a sonar y te ofrece un botón para que suene igualmente. Y si un día concreto no la necesitas, puedes saltar solo la próxima, o cambiar su hora solo esa vez. Si alguna regla dice que ese día no suena, Vigía te avisa y te pide confirmación.
 
 Ni siquiera hace falta abrir la app. El widget te dice si sonará y por qué, con un color claro para cada estado y en cuatro tamaños, desde uno mínimo de 2x1 hasta uno con toda tu semana. Su fondo puede ser opaco, semitransparente o transparente. Desde él, o desde el panel rápido, puedes saltar la alarma o hacer que suene.
 
@@ -95,7 +95,7 @@ Si el calendario no se puede leer o faltan los festivos, la alarma suena y te av
 
 - **Reglas:** calendarios por cuenta, palabras clave, eventos de día completo u ocupado, festivos, fechas, meses, semanas alternas, días pares o impares, y estado del móvil.
 - **Turnos:** cuadrante pintable, ciclos de hasta 12 semanas, una hora por turno, cambios puntuales, meses pintados y turnos desde tu calendario.
-- **Alarmas:** grupos, plantillas, alarmas de un solo uso, repetición dentro de un rango, previsión de 30 días y saltar la próxima.
+- **Alarmas:** grupos, plantillas, alarmas de un solo uso, repetición dentro de un rango, previsión de 30 días, y saltar la próxima o cambiar su hora solo esa vez.
 - **Despertar:** tono o archivo propio, volumen máximo, subida progresiva, vibración y aplazamiento configurable.
 - **Apagado:** cálculo, sacudir, caminar, código QR y alarma de respaldo.
 - **Reloj:** otras ciudades, modo nocturno y salvapantallas.

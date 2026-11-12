@@ -192,6 +192,19 @@ object Notifications {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+    fun changedTomorrow(context: Context, changed: ChangedTomorrow) {
+        val time = "%02d:%02d".format(changed.time.hour, changed.time.minute)
+        val label = changed.alarm.config.label
+        val notification = NotificationCompat.Builder(context, CHANNEL_NOTICE)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(tr("Mañana suena a las $time, solo esta vez", "Tomorrow it rings at $time, just this once"))
+            .setContentText(label.ifBlank { tr("Cambio puntual de hora", "One-off time change") })
+            .setContentIntent(openApp(context))
+            .setAutoCancel(true)
+            .build()
+        notify(context, NOTICE_BASE_ID + changed.alarm.id.toInt(), notification)
+    }
+
     fun skippedTomorrow(context: Context, skipped: SkippedTomorrow) {
         val alarm = skipped.alarm
         val force = PendingIntent.getBroadcast(

@@ -28,6 +28,8 @@ import app.vigia.alarmas.domain.Plan
 import app.vigia.alarmas.domain.StatusItem
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +37,15 @@ import kotlinx.coroutines.withContext
 
 data class SkippedTomorrow(val alarm: AlarmEntity, val date: LocalDate, val reason: String)
 
-data class EveningReport(val skipped: List<SkippedTomorrow>, val calendarUnavailable: Boolean)
+data class ChangedTomorrow(val alarm: AlarmEntity, val time: LocalTime)
+
+data class EveningReport(
+    val skipped: List<SkippedTomorrow>,
+    val calendarUnavailable: Boolean,
+    val changed: List<ChangedTomorrow> = emptyList(),
+)
+
+data class OneTimeTarget(val date: LocalDate, val usual: LocalTime, val current: LocalTime?)
 
 data class FireResult(
     val ring: Boolean,
@@ -59,7 +69,10 @@ class AlarmCoordinator(
 
     suspend fun reconcile() = withContext(Dispatchers.IO) {
         val now = ZonedDateTime.now()
-        alarms.all().forEach { schedule(it, now) }
+        alarms.all().map { alarm ->
+            val expired = alarm.oneTimeMoment?.toLocalDate()?.isBefore(now.toLocalDate()) == true
+            if (expired) alarm.copy(oneTime = null).also { alarms.update(it) } else alarm
+        }.forEach { schedule(it, now) }
         scheduleNotice(now)
         refreshWidgets()
     }
@@ -206,6 +219,45 @@ class AlarmCoordinator(
         refreshWidgets()
     }
 
+    /** Día que cambiaría "Cambiar solo la próxima" y su hora habitual. */
+    suspend fun oneTimeTarget(alarm: AlarmEntity): OneTimeTarget? = withContext(Dispatchers.IO) {
+        val now = ZonedDateTime.now()
+        val spec = alarm.toSpec().copy(oneTime = null)
+        val (date, usual) = AlarmEngine.nextScheduledDay(spec, now, snapshot(spec, now.toLocalDate()))
+            ?: return@withContext null
+        val current = alarm.oneTimeMoment?.takeIf { it.toLocalDate() == date }?.toLocalTime()
+        OneTimeTarget(date, usual, current)
+    }
+
+    /** Motivo por el que ese día no sonaría según las reglas, o null si sonaría. */
+    suspend fun oneTimeConflict(alarm: AlarmEntity, date: LocalDate): String? = withContext(Dispatchers.IO) {
+        val spec = alarm.toSpec().copy(oneTime = null)
+        val decision = AlarmEngine.evaluate(spec, date, snapshot(spec, date), holidays = holidays)
+        (decision as? Decision.Skip)?.reason
+    }
+
+    suspend fun setOneTime(alarm: AlarmEntity, moment: LocalDateTime) = withContext(Dispatchers.IO) {
+        val current = alarms.byId(alarm.id) ?: return@withContext
+        val day = moment.toLocalDate().toString()
+        val updated = current.copy(
+            oneTime = moment.toString(),
+            skipDate = current.skipDate.takeIf { it != day },
+            stoppedDate = current.stoppedDate.takeIf { it != day },
+        )
+        alarms.update(updated)
+        log(updated, HistoryType.ONE_TIME, "$day ${"%02d:%02d".format(moment.hour, moment.minute)}")
+        schedule(updated, ZonedDateTime.now())
+        refreshWidgets()
+    }
+
+    suspend fun clearOneTime(alarm: AlarmEntity) = withContext(Dispatchers.IO) {
+        val current = alarms.byId(alarm.id) ?: return@withContext
+        val updated = current.copy(oneTime = null)
+        alarms.update(updated)
+        schedule(updated, ZonedDateTime.now())
+        refreshWidgets()
+    }
+
     suspend fun snooze(alarmId: Long) = withContext(Dispatchers.IO) {
         val alarm = alarms.byId(alarmId) ?: return@withContext
         val minutes = alarm.config.snooze.minutes
@@ -257,6 +309,7 @@ class AlarmCoordinator(
     suspend fun eveningReport(): EveningReport = withContext(Dispatchers.IO) {
         val tomorrow = LocalDate.now().plusDays(1)
         val skipped = mutableListOf<SkippedTomorrow>()
+        val changed = mutableListOf<ChangedTomorrow>()
         var unavailable = false
 
         alarms.all().filter { it.enabled }.forEach { alarm ->
@@ -271,9 +324,11 @@ class AlarmCoordinator(
             if (decision is Decision.Skip) {
                 skipped += SkippedTomorrow(alarm, tomorrow, decision.reason)
                 logSkip(alarm, tomorrow, decision.reason)
+            } else if (decision is Decision.Ring && spec.oneTime?.toLocalDate() == tomorrow) {
+                changed += ChangedTomorrow(alarm, decision.time)
             }
         }
-        EveningReport(skipped, unavailable)
+        EveningReport(skipped, unavailable, changed)
     }
 
     fun refreshNoticeSchedule() {
