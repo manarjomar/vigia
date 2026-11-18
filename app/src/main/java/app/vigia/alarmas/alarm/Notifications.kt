@@ -30,6 +30,7 @@ object Notifications {
     private const val TIMER_STEP_ID = 5
     private const val NOTICE_BASE_ID = 1000
     private const val TIMER_NOTIFICATION_BASE = 5000
+    private const val SNOOZE_BASE_ID = 7000
 
     fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -191,6 +192,50 @@ object Notifications {
             Intent(context, ActionReceiver::class.java).setAction(action),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    fun snoozed(context: Context, alarmId: Long, label: String, until: Long, canStop: Boolean) {
+        val time = java.time.Instant.ofEpochMilli(until).atZone(java.time.ZoneId.systemDefault())
+        val clock = "%02d:%02d".format(time.hour, time.minute)
+        val builder = NotificationCompat.Builder(context, CHANNEL_TIMERS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(tr("Pospuesta: $label", "Snoozed: $label"))
+            .setContentText(
+                if (canStop) {
+                    tr("Volverá a sonar a las $clock", "It will ring again at $clock")
+                } else {
+                    tr(
+                        "Volverá a sonar a las $clock. Tiene reto: se detiene al sonar.",
+                        "It will ring again at $clock. It has a challenge: stop it when it rings.",
+                    )
+                },
+            )
+            .setContentIntent(openApp(context))
+            .setOngoing(true)
+            .setSilent(true)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setWhen(until)
+            .setShowWhen(true)
+        if (canStop) {
+            builder.addAction(
+                0,
+                tr("Detener", "Stop"),
+                PendingIntent.getBroadcast(
+                    context,
+                    SNOOZE_BASE_ID + alarmId.toInt(),
+                    Intent(context, ActionReceiver::class.java)
+                        .setAction(ActionReceiver.ACTION_CANCEL_SNOOZE)
+                        .putExtra(ActionReceiver.EXTRA_ALARM_ID, alarmId),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            )
+        }
+        notify(context, SNOOZE_BASE_ID + alarmId.toInt(), builder.build())
+    }
+
+    fun cancelSnoozed(context: Context, alarmId: Long) {
+        context.getSystemService(NotificationManager::class.java).cancel(SNOOZE_BASE_ID + alarmId.toInt())
+    }
 
     fun changedTomorrow(context: Context, changed: ChangedTomorrow) {
         val time = "%02d:%02d".format(changed.time.hour, changed.time.minute)

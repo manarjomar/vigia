@@ -120,7 +120,7 @@ If the calendar can't be read or the holidays are missing, the alarm rings and l
 - **Rules:** calendars by account, keywords, all-day or busy events, holidays, dates, months, alternate weeks, even or odd days, and phone status.
 - **Shifts:** a paintable rota, cycles of up to 12 weeks, one time per shift, one-off changes, painted months and shifts from your calendar.
 - **Alarms:** groups, templates, one-off alarms, repeating within a range, 30-day forecast, and skipping or retiming just the next one.
-- **Wake-up:** tone or your own file, maximum volume, gradual rise, vibration and configurable snooze.
+- **Wake-up:** tone or your own file, maximum volume, gradual rise, vibration, configurable snooze and snoozing with the volume buttons. A snoozed alarm can be stopped from its notification, without waiting for it to ring again.
 - **Dismissal:** sums, shake, walk, QR code and backup alarm.
 - **Clock:** other cities, night mode and screensaver.
 - **Widgets:** today's or tomorrow's status, the reason, buttons to skip or ring, a week view and a quick settings tile.

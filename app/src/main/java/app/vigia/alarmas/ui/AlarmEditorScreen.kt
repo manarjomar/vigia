@@ -585,6 +585,15 @@ private fun SnoozeSection(config: AlarmConfig, onChange: (AlarmConfig) -> Unit) 
             )
         }
     }
+    SwitchRow(
+        title = tr("Posponer con los botones de volumen", "Snooze with the volume buttons"),
+        checked = snooze.volumeKeys,
+        onChange = { onChange(config.copy(snooze = snooze.copy(volumeKeys = it))) },
+        detail = tr(
+            "Con la pantalla de la alarma abierta. En modo perezosos, la detienen hasta la siguiente.",
+            "While the alarm screen is open. In sleepyhead mode, they stop it until the next one.",
+        ),
+    )
     FieldLabel(tr("Dejar de sonar tras ${config.ringLimitMinutes} minutos", "Stop ringing after ${config.ringLimitMinutes} minutes"))
     Slider(
         value = config.ringLimitMinutes.toFloat(),

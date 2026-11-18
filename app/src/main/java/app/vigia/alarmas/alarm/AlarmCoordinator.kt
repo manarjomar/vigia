@@ -14,6 +14,7 @@ import app.vigia.alarmas.data.Settings
 import app.vigia.alarmas.data.VigiaDatabase
 import app.vigia.alarmas.domain.AlarmConfig
 import app.vigia.alarmas.domain.AlarmEngine
+import app.vigia.alarmas.domain.ChallengeKind
 import app.vigia.alarmas.domain.AlarmSpec
 import app.vigia.alarmas.domain.BurstConfig
 import app.vigia.alarmas.domain.CalendarSnapshot
@@ -72,7 +73,11 @@ class AlarmCoordinator(
         alarms.all().map { alarm ->
             val expired = alarm.oneTimeMoment?.toLocalDate()?.isBefore(now.toLocalDate()) == true
             if (expired) alarm.copy(oneTime = null).also { alarms.update(it) } else alarm
-        }.forEach { schedule(it, now) }
+        }.forEach { alarm ->
+            schedule(alarm, now)
+            val snoozed = alarm.snoozeUntil?.let { it > now.toInstant().toEpochMilli() } == true
+            if (alarm.enabled && snoozed && !alarm.backupPending) showSnoozed(alarm)
+        }
         scheduleNotice(now)
         refreshWidgets()
     }
@@ -164,6 +169,7 @@ class AlarmCoordinator(
         withContext(Dispatchers.IO) {
             val alarm = alarms.byId(alarmId) ?: return@withContext FireResult(ring = false)
             if (snoozed || backup) {
+                Notifications.cancelSnoozed(context, alarmId)
                 alarms.update(alarm.copy(snoozeUntil = null, backupPending = false))
                 return@withContext FireResult(true, alarm.config, backup, alarm.snoozeCount)
             }
@@ -269,6 +275,32 @@ class AlarmCoordinator(
         alarms.update(updated)
         log(alarm, HistoryType.SNOOZED, "$minutes min")
         schedule(updated, ZonedDateTime.now())
+        showSnoozed(updated)
+    }
+
+    private fun showSnoozed(alarm: AlarmEntity) {
+        val until = alarm.snoozeUntil ?: return
+        val config = alarm.config
+        Notifications.snoozed(
+            context,
+            alarm.id,
+            config.label.ifBlank { "%02d:%02d".format(config.hour, config.minute) },
+            until,
+            canStop = config.challenge.kind == ChallengeKind.NONE,
+        )
+    }
+
+    /** Detiene una alarma pospuesta desde su notificación, sin que vuelva a sonar. */
+    suspend fun cancelSnooze(alarmId: Long) = withContext(Dispatchers.IO) {
+        Notifications.cancelSnoozed(context, alarmId)
+        val alarm = alarms.byId(alarmId) ?: return@withContext
+        if (alarm.snoozeUntil == null) return@withContext
+        val finished = alarm.config.isOneShot && alarm.config.burst == null
+        val updated = alarm.copy(snoozeUntil = null, snoozeCount = 0, enabled = alarm.enabled && !finished)
+        alarms.update(updated)
+        log(updated, HistoryType.DISMISSED, tr("Desde la notificación", "From the notification"))
+        schedule(updated, ZonedDateTime.now())
+        refreshWidgets()
     }
 
     /** La alarma no se ha apagado: vuelve a sonar más tarde al máximo. */

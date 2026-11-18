@@ -68,6 +68,10 @@ class ActionReceiver : BroadcastReceiver() {
             ACTION_FORCE -> forceAlarm(context, intent)
             ACTION_SKIP -> skipAlarm(context, intent)
             ACTION_REFRESH -> runAsync { Graph.coordinator(context).refreshWidgets() }
+            ACTION_CANCEL_SNOOZE -> {
+                val id = intent.getLongExtra(EXTRA_ALARM_ID, 0)
+                runAsync { Graph.coordinator(context).cancelSnooze(id) }
+            }
             ClockActions.LAP -> stopwatch.lap()
             ClockActions.PAUSE -> stopwatch.pause()
             ClockActions.RESUME -> stopwatch.start()
@@ -102,6 +106,7 @@ class ActionReceiver : BroadcastReceiver() {
         const val ACTION_FORCE = "app.vigia.alarmas.FORCE"
         const val ACTION_SKIP = "app.vigia.alarmas.SKIP"
         const val ACTION_REFRESH = "app.vigia.alarmas.REFRESH"
+        const val ACTION_CANCEL_SNOOZE = "app.vigia.alarmas.CANCEL_SNOOZE"
         const val EXTRA_ALARM_ID = "alarm_id"
         const val EXTRA_DATE = "date"
     }

@@ -139,7 +139,7 @@ data class SoundConfig(
 )
 
 @Serializable
-data class SnoozeConfig(val minutes: Int = 9, val maxCount: Int = 3)
+data class SnoozeConfig(val minutes: Int = 9, val maxCount: Int = 3, val volumeKeys: Boolean = true)
 
 @Serializable
 data class BackupConfig(val enabled: Boolean = true, val afterMinutes: Int = 5)

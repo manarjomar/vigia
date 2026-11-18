@@ -118,7 +118,7 @@ Si el calendario no se puede leer o faltan los festivos, la alarma suena y te av
 - **Reglas:** calendarios por cuenta, palabras clave, eventos de día completo u ocupado, festivos, fechas, meses, semanas alternas, días pares o impares, y estado del móvil.
 - **Turnos:** cuadrante pintable, ciclos de hasta 12 semanas, una hora por turno, cambios puntuales, meses pintados y turnos desde tu calendario.
 - **Alarmas:** grupos, plantillas, alarmas de un solo uso, repetición dentro de un rango, previsión de 30 días, y saltar la próxima o cambiar su hora solo esa vez.
-- **Despertar:** tono o archivo propio, volumen máximo, subida progresiva, vibración y aplazamiento configurable.
+- **Despertar:** tono o archivo propio, volumen máximo, subida progresiva, vibración, aplazamiento configurable y posponer con los botones de volumen. Una alarma pospuesta se puede detener desde su notificación, sin esperar a que vuelva a sonar.
 - **Apagado:** cálculo, sacudir, caminar, código QR y alarma de respaldo.
 - **Reloj:** otras ciudades, modo nocturno y salvapantallas.
 - **Widgets:** estado de hoy o mañana, motivo, botones para saltar o hacer sonar, vista de la semana y botón del panel rápido.

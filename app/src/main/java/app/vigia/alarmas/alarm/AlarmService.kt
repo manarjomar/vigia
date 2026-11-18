@@ -43,6 +43,7 @@ data class RingState(
     val snoozeMinutes: Int? = null,
     val fadeSeconds: Int = 0,
     val burst: Boolean = false,
+    val volumeKeys: Boolean = true,
 )
 
 class AlarmService : Service() {
@@ -130,6 +131,7 @@ class AlarmService : Service() {
                 snoozeMinutes = if (canSnooze) snooze.minutes else null,
                 fadeSeconds = sound.fadeSeconds,
                 burst = isBurst,
+                volumeKeys = config.snooze.volumeKeys,
             ),
             sound,
             limit,

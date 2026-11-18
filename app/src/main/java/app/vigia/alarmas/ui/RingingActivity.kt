@@ -10,6 +10,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -110,6 +111,30 @@ class RingingActivity : ComponentActivity() {
             }
         }
     }
+
+    /** Los botones de volumen posponen la alarma. En modo perezosos, la detienen hasta la siguiente. */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        val state = AlarmService.ringing.value
+        if (isVolumeKey(keyCode) && state != null && state.volumeKeys) {
+            if (event.repeatCount == 0) {
+                when {
+                    state.burst -> send(AlarmService.ACTION_DISMISS)
+                    state.snoozeMinutes != null -> send(AlarmService.ACTION_SNOOZE)
+                }
+            }
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        val state = AlarmService.ringing.value
+        if (isVolumeKey(keyCode) && state != null && state.volumeKeys) return true
+        return super.onKeyUp(keyCode, event)
+    }
+
+    private fun isVolumeKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
 
     private fun send(action: String) {
         startService(Intent(this, AlarmService::class.java).setAction(action))
